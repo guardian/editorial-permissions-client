@@ -1,9 +1,9 @@
 package com.gu.editorial.permissions
 
+import scala.language.implicitConversions
+
 /**
- * Permissions library - retrieves and provides access control based on a permissions service.
- *
- * Separate package so that this can be extracted into a separate shared library.
+ * Permissions client library - retrieves and provides access control based on a permissions service.
  */
 package object client {
 

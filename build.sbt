@@ -8,6 +8,8 @@ scalaVersion := "2.10.4"
 
 crossScalaVersions := Seq("2.10.4", "2.11.4")
 
+scalacOptions ++= Seq("-feature", "-deprecation", "-language:higherKinds", "-Xfatal-warnings")
+
 libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk" % "1.9.29",
   "com.typesafe.akka" %% "akka-actor" % "2.3.4",

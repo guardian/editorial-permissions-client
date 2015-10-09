@@ -60,7 +60,7 @@ trait PermissionsStoreProvider {
 }
 
 
-private[client] final class PermissionsStoreFromS3(refreshFrequency: Option[FiniteDuration] = Some(1 minute),
+private[client] final class PermissionsStoreFromS3(refreshFrequency: Option[FiniteDuration] = Some(Duration(1, MINUTES)),
                                                 s3Client: Option[AmazonS3] = None)
                                                (implicit config: PermissionsConfig,
                                                 actorSystem: ActorSystem = ActorSystem(),
@@ -68,7 +68,7 @@ private[client] final class PermissionsStoreFromS3(refreshFrequency: Option[Fini
 
   implicit lazy val logger = LoggerFactory.getLogger(getClass)
 
-  implicit private val timeout = Timeout(5 seconds)
+  implicit private val timeout = Timeout(Duration(5, SECONDS))
 
   val store: Agent[PermissionsStoreModel] = Agent(PermissionsStoreModel.empty)
 
