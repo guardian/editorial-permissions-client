@@ -1,11 +1,5 @@
 pomExtra in Global := {
   <url>https://github.com/guardian/editorial-permissions-client</url>
-  <licenses>
-    <license>
-      <name>Apache 2</name>
-      <url>http://opensource.org/licenses/Apache-2.0</url>
-    </license>
-  </licenses>
   <scm>
     <connection>scm:git:github.com/guardian/editorial-permissions-client</connection>
     <developerConnection>scm:git:git@github.com:guardian/editorial-permissions-client.git</developerConnection>
