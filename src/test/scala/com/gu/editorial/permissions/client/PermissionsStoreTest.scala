@@ -138,6 +138,40 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
     }
   }
 
+  test("should retrieve permissions for user ignoring email case") {
+    mockS3Response {
+      """
+        |[
+        | {
+        |   "permission":{"name":"launch_content","app":"composer","defaultValue":true},
+        |   "overrides":[{"userId":"joHn.sNow@Guardian.co.uk","active":false}]
+        | },
+        | {
+        |   "permission": {"name":"delete_content","app":"composer","defaultValue":false}
+        |   "overrides": [{"userId":"jOhn.snOw@guardian.co.uk","active":true}]
+        | }
+        |]
+      """.stripMargin
+    }
+
+    val provider = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
+    val store = new PermissionsStore(Some(provider))
+
+    provider.refreshStore.futureValue
+
+    implicit val user = PermissionsUser("John.Snow@guardian.co.uk", "")
+
+    whenReady(store.list) { permsList =>
+      permsList.get(launchContentPermission) should be(Some(PermissionDenied))
+      permsList.get(deleteContentPermission) should be(Some(PermissionGranted))
+
+      permsList should have size 2
+    }
+  }
+
+
+
+
   // When S3 is down:
   test("should error when store not populated") {
 
