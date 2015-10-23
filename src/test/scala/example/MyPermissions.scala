@@ -21,7 +21,7 @@ object MyPermissions extends PermissionsProvider {
 object Example {
 
   implicit def permissionsUser: PermissionsUser =
-    PermissionsUser("user.email@guardian.co.uk", "user-token")
+    PermissionsUser("user.email@guardian.co.uk")
 
   MyPermissions.get(MyPermissions.LaunchContent).map {
     case PermissionGranted => "I'm in!"

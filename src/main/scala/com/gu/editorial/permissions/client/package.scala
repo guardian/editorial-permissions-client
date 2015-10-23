@@ -46,7 +46,7 @@ package object client {
   /** Simple map for JSON serialisation */
   type SimplePermissionsMap = Map[String, Boolean]
 
-  case class PermissionsUser(userId: String, token: String)
+  case class PermissionsUser(userId: String)
 
   case class PermissionsStoreDisabledException() extends Exception("Permissions Store disabled")
 

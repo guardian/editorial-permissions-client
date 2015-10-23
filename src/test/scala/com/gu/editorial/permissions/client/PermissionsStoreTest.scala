@@ -128,7 +128,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
     provider.refreshStore.futureValue
 
-    implicit val user = PermissionsUser("james", "")
+    implicit val user = PermissionsUser("james")
 
     whenReady(store.list) { permsList =>
       permsList.get(manageUsersPermission) should be(Some(PermissionDenied))
@@ -159,7 +159,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
     provider.refreshStore.futureValue
 
-    implicit val user = PermissionsUser("John.Snow@guardian.co.uk", "")
+    implicit val user = PermissionsUser("John.Snow@guardian.co.uk")
 
     whenReady(store.list) { permsList =>
       permsList.get(launchContentPermission) should be(Some(PermissionDenied))
@@ -180,7 +180,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
     val provider = new PermissionsStoreFromS3(s3Client = Some(s3Mock))
     val store = new PermissionsStore(Some(provider))
 
-    implicit val user = PermissionsUser("james", "")
+    implicit val user = PermissionsUser("james")
 
     store.list.failed.futureValue shouldBe a[PermissionsStoreEmptyException]
   }
