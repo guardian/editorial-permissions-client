@@ -4,15 +4,14 @@ import java.util.Date
 import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
 import org.mockito.Mockito._
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito.when
-import scala.concurrent.{Awaitable, Await}
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
+class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with BeforeAndAfterAll with ScalaFutures {
 
   implicit val config = PermissionsConfig("composer", Seq.empty)
 
@@ -40,14 +39,12 @@ class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSuga
 
   val s3Mock = mock[AmazonS3]
 
-  implicit val actorSystem = ActorSystem()
+  implicit val actorSystem = ActorSystem("PermissionsStoreTest")
 
   override def afterAll() = actorSystem.shutdown()
 
   def mockS3Response(response: String) =
     when(s3Mock.getContentsAndLastModified(config.s3PermissionsFile, s"${config.s3Bucket}/${config.s3BucketPrefix}")).thenReturn{ (response, new Date) }
-
-  def await[T] = Await.result(_: Awaitable[T], Duration(10000, "millis"))
 
   val launchContentPermission = Permission("launch_content", "composer")
   val manageUsersPermission = Permission("manage_users", "global")
@@ -91,7 +88,7 @@ class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSuga
     initStore.defaults should be(Seq.empty)
     initStore.userOverrides should be(Map.empty)
 
-    await(storeProvider.refreshStore)
+    storeProvider.refreshStore.futureValue
 
     val updatedStore = storeProvider.store.get()
     updatedStore.defaults should not be 'empty
@@ -112,7 +109,7 @@ class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSuga
       """.stripMargin
     }
 
-    await(storeProvider.refreshStore)
+    storeProvider.refreshStore.futureValue
 
     val goCrazy = Permission("go_crazy", "global")
     val newUpdate = storeProvider.store.get()
@@ -127,20 +124,18 @@ class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSuga
     mockS3Response(testJson)
 
     val provider = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
-    val store = new PermissionsStore {
-      override val storeProvider = provider
-    }
+    val store = new PermissionsStore(Some(provider))
 
-    await(provider.refreshStore)
+    provider.refreshStore.futureValue
 
     implicit val user = PermissionsUser("james", "")
 
-    val permsList = await(store.list)
+    whenReady(store.list) { permsList =>
+      permsList.get(manageUsersPermission) should be(Some(PermissionDenied))
+      permsList.get(sensitivityControlsPermission) should be(Some(PermissionDenied))
 
-    permsList.get(manageUsersPermission) should be (Some(PermissionDenied))
-    permsList.get(sensitivityControlsPermission) should be (Some(PermissionDenied))
-
-    permsList should have size 4
+      permsList should have size 4
+    }
   }
 
   // When S3 is down:
@@ -148,15 +143,12 @@ class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSuga
 
     when(s3Mock.getContentsAndLastModified(config.s3PermissionsFile, s"${config.s3Bucket}/${config.s3BucketPrefix}")).thenThrow(new AmazonServiceException("Mocked AWS Exception"))
 
-    val store = new PermissionsStore {
-      override val storeProvider = new PermissionsStoreFromS3(s3Client = Some(s3Mock))
-    }
+    val provider = new PermissionsStoreFromS3(s3Client = Some(s3Mock))
+    val store = new PermissionsStore(Some(provider))
 
     implicit val user = PermissionsUser("james", "")
 
-    intercept[PermissionsStoreEmptyException] {
-      await(store.list)
-    }
+    store.list.failed.futureValue shouldBe a[PermissionsStoreEmptyException]
   }
 
 }

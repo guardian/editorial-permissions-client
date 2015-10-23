@@ -16,6 +16,8 @@ For example:
 
 ```scala
 import com.gu.editorial.permissions.client._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object MyPermissions extends PermissionsProvider {
@@ -69,6 +71,6 @@ Then release to sonatype using [`sbt-sonatype`](https://github.com/xerial/sbt-so
 ```
 sbt
 > clean
-> publishSigned
+> + publishSigned
 > sonatypeRelease
 ```

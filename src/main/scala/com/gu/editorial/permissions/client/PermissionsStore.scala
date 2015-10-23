@@ -32,9 +32,9 @@ object PermissionsStoreModel {
 }
 
 
-class PermissionsStore(implicit config: PermissionsConfig, executionContext: ExecutionContext) {
+class PermissionsStore(provider: Option[PermissionsStoreProvider] = None)(implicit config: PermissionsConfig, executionContext: ExecutionContext) {
 
-  val storeProvider: PermissionsStoreProvider = new PermissionsStoreFromS3
+  val storeProvider: PermissionsStoreProvider = provider.getOrElse(new PermissionsStoreFromS3)
 
   def get(perm: Permission)(implicit user: PermissionsUser, config: PermissionsConfig): Future[PermissionAuthorisation] =
     list.map(_.getOrElse(perm, perm.defaultValue))
