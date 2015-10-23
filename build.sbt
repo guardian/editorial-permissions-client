@@ -17,7 +17,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-slf4j" % "2.3.4",
   "net.liftweb" %% "lift-json" % "2.5",
   "org.mockito" % "mockito-all" % "1.8.5" % "test",
-  "org.scalatest" %% "scalatest" % "1.9.1" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
 
 com.typesafe.sbt.SbtGit.versionWithGit

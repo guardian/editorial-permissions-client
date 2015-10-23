@@ -5,14 +5,14 @@ import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito.when
 import scala.concurrent.{Awaitable, Await}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PermissionsStoreTest extends FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
+class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with BeforeAndAfterAll {
 
   implicit val config = PermissionsConfig("composer", Seq.empty)
 
