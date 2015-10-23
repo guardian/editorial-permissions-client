@@ -46,7 +46,7 @@ class PermissionsStore(provider: Option[PermissionsStoreProvider] = None)(implic
         .flatMap {
         case PermissionsStoreModel.empty => Future.failed(PermissionsStoreEmptyException())
         case s: PermissionsStoreModel => Future.successful[PermissionsMap] {
-          s.defaultsMap ++ s.userOverrides.getOrElse(user.userId, Map.empty)
+          s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty)
         }
       }
 
@@ -108,7 +108,7 @@ private[client] object S3Parser {
     val values = for {
       entry <- parsed
       userOverride <- entry.overrides
-    } yield (userOverride.userId, entry.permission : Permission, userOverride.active : PermissionAuthorisation)
+    } yield (userOverride.userId.toLowerCase, entry.permission : Permission, userOverride.active : PermissionAuthorisation)
 
     val userOverrides = for {
       (userId, triple) <- values.groupBy(_._1)
