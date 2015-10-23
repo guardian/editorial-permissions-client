@@ -6,7 +6,7 @@ Scala Client library for the Guardian's [Editorial Permissions service](https://
 Add the following dependency to your `build.sbt`
 
 ```scala
-libraryDependencies += "com.gu" %% "editorial-permissions-client" % "0.1"
+libraryDependencies += "com.gu" %% "editorial-permissions-client" % "0.2"
 ```
 
 Then mixin the `PermissionsProvider` trait to configure integration with
