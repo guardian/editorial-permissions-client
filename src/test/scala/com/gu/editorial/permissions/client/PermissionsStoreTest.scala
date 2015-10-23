@@ -40,7 +40,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
   val s3Mock = mock[AmazonS3]
 
-  implicit val actorSystem = ActorSystem()
+  implicit val actorSystem = ActorSystem("PermissionsStoreTest")
 
   override def afterAll() = actorSystem.shutdown()
 
@@ -127,9 +127,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
     mockS3Response(testJson)
 
     val provider = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
-    val store = new PermissionsStore {
-      override val storeProvider = provider
-    }
+    val store = new PermissionsStore(Some(provider))
 
     await(provider.refreshStore)
 
@@ -148,9 +146,8 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
     when(s3Mock.getContentsAndLastModified(config.s3PermissionsFile, s"${config.s3Bucket}/${config.s3BucketPrefix}")).thenThrow(new AmazonServiceException("Mocked AWS Exception"))
 
-    val store = new PermissionsStore {
-      override val storeProvider = new PermissionsStoreFromS3(s3Client = Some(s3Mock))
-    }
+    val provider = new PermissionsStoreFromS3(s3Client = Some(s3Mock))
+    val store = new PermissionsStore(Some(provider))
 
     implicit val user = PermissionsUser("james", "")
 
