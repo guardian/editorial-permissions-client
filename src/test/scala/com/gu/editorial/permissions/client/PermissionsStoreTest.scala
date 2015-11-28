@@ -41,7 +41,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
   implicit val actorSystem = ActorSystem("PermissionsStoreTest")
 
-  override def afterAll() = actorSystem.shutdown()
+  override def afterAll() = actorSystem.terminate()
 
   def mockS3Response(response: String) =
     when(s3Mock.getContentsAndLastModified(config.s3PermissionsFile, s"${config.s3Bucket}/${config.s3BucketPrefix}")).thenReturn{ (response, new Date) }
