@@ -32,15 +32,15 @@ object PermissionsStoreModel {
 }
 
 
-class PermissionsStore(provider: Option[PermissionsStoreProvider] = None)(implicit config: PermissionsConfig, executionContext: ExecutionContext) {
+class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsStoreProvider] = None)(implicit executionContext: ExecutionContext) {
 
-  val storeProvider: PermissionsStoreProvider = provider.getOrElse(new PermissionsStoreFromS3)
+  val storeProvider: PermissionsStoreProvider = provider.getOrElse(new PermissionsStoreFromS3(config))
 
-  def get(perm: Permission)(implicit user: PermissionsUser, config: PermissionsConfig): Future[PermissionAuthorisation] =
+  def get(perm: Permission)(implicit user: PermissionsUser): Future[PermissionAuthorisation] =
     list.map(_.getOrElse(perm, perm.defaultValue))
 
 
-  def list(implicit user: PermissionsUser, config: PermissionsConfig): Future[PermissionsMap] = {
+  def list(implicit user: PermissionsUser): Future[PermissionsMap] = {
     if (config.enablePermissionsStore)
       storeProvider.store.future()
         .flatMap {
@@ -60,11 +60,11 @@ trait PermissionsStoreProvider {
 }
 
 
-private[client] final class PermissionsStoreFromS3(refreshFrequency: Option[FiniteDuration] = Some(Duration(1, MINUTES)),
-                                                s3Client: Option[AmazonS3] = None)
-                                               (implicit config: PermissionsConfig,
-                                                actorSystem: ActorSystem = ActorSystem(),
-                                                executionContext: ExecutionContext) extends PermissionsStoreProvider {
+private[client] final class PermissionsStoreFromS3(config: PermissionsConfig,
+                                                   refreshFrequency: Option[FiniteDuration] = Some(Duration(1, MINUTES)),
+                                                   s3Client: Option[AmazonS3] = None)
+                                                  (implicit actorSystem: ActorSystem = ActorSystem(),
+                                                   executionContext: ExecutionContext) extends PermissionsStoreProvider {
 
   implicit lazy val logger = LoggerFactory.getLogger(getClass)
 

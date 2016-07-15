@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with BeforeAndAfterAll with ScalaFutures {
 
-  implicit val config = PermissionsConfig("composer", Seq.empty)
+  val config = PermissionsConfig("composer", Seq.empty)
 
   val testJson =
     """
@@ -53,7 +53,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
   test("should parse from S3") {
     mockS3Response(testJson)
-    val store = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
+    val store = new PermissionsStoreFromS3(config, refreshFrequency = None, s3Client = Some(s3Mock))
     val result = store.get
 
     result.defaults.head should be(launchContentPermission)
@@ -82,7 +82,7 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
   test("should refresh store from S3") {
     mockS3Response(testJson)
-    val storeProvider = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
+    val storeProvider = new PermissionsStoreFromS3(config, refreshFrequency = None, s3Client = Some(s3Mock))
 
     val initStore = storeProvider.store.get()
     initStore.defaults should be(Seq.empty)
@@ -123,8 +123,8 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
   test("should fallback to defaults when overrides not present on a permissions list") {
     mockS3Response(testJson)
 
-    val provider = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
-    val store = new PermissionsStore(Some(provider))
+    val provider = new PermissionsStoreFromS3(config, refreshFrequency = None, s3Client = Some(s3Mock))
+    val store = new PermissionsStore(config, Some(provider))
 
     provider.refreshStore.futureValue
 
@@ -154,8 +154,8 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
       """.stripMargin
     }
 
-    val provider = new PermissionsStoreFromS3(refreshFrequency = None, s3Client = Some(s3Mock))
-    val store = new PermissionsStore(Some(provider))
+    val provider = new PermissionsStoreFromS3(config, refreshFrequency = None, s3Client = Some(s3Mock))
+    val store = new PermissionsStore(config, Some(provider))
 
     provider.refreshStore.futureValue
 
@@ -177,8 +177,8 @@ class PermissionsStoreTest extends FunSuite with Matchers with MockitoSugar with
 
     when(s3Mock.getContentsAndLastModified(config.s3PermissionsFile, s"${config.s3Bucket}/${config.s3BucketPrefix}")).thenThrow(new AmazonServiceException("Mocked AWS Exception"))
 
-    val provider = new PermissionsStoreFromS3(s3Client = Some(s3Mock))
-    val store = new PermissionsStore(Some(provider))
+    val provider = new PermissionsStoreFromS3(s3Client = Some(s3Mock), config = config)
+    val store = new PermissionsStore(config, Some(provider))
 
     implicit val user = PermissionsUser("james")
 

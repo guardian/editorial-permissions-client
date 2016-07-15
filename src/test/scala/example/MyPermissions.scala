@@ -8,7 +8,7 @@ import scala.concurrent.Future
 object MyPermissions extends PermissionsProvider {
   val app = "composer"
 
-  implicit def config = PermissionsConfig(
+  def config = PermissionsConfig(
     app = app,
     all = all
   )

@@ -12,9 +12,9 @@ trait PermissionsProvider {
 
   implicit lazy val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  implicit def config: PermissionsConfig
+  def config: PermissionsConfig
 
-  private val store: PermissionsStore = new PermissionsStore
+  private val store: PermissionsStore = new PermissionsStore(config)
 
   def get(perm: Permission)(implicit user: PermissionsUser): Future[PermissionAuthorisation] =
     store.get(perm).recover {
