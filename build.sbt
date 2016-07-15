@@ -1,3 +1,5 @@
+import ReleaseTransformations._
+
 name := """editorial-permissions-client"""
 
 organization := "com.gu"
@@ -23,4 +25,17 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )
 
-com.typesafe.sbt.SbtGit.versionWithGit
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  ReleaseStep(action = Command.process("publishSigned", _)),
+  setNextVersion,
+  commitNextVersion,
+  ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
+  pushChanges
+)
