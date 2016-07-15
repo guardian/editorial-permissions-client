@@ -57,6 +57,7 @@ class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsSt
 
 trait PermissionsStoreProvider {
   val store: Agent[PermissionsStoreModel]
+  def storeIsEmpty: Boolean
 }
 
 
@@ -71,6 +72,13 @@ private[client] final class PermissionsStoreFromS3(config: PermissionsConfig,
   implicit private val timeout = Timeout(Duration(5, SECONDS))
 
   val store: Agent[PermissionsStoreModel] = Agent(PermissionsStoreModel.empty)
+
+  def storeIsEmpty = {
+    store.get() match {
+      case PermissionsStoreModel.empty => true
+      case s: PermissionsStoreModel => false
+    }
+  }
 
   private val s3 = s3Client.getOrElse {
     new AmazonS3(creds = config.awsCredentials, region = config.s3Region)

@@ -14,7 +14,7 @@ trait PermissionsProvider {
 
   def config: PermissionsConfig
 
-  private val store: PermissionsStore = new PermissionsStore(config)
+  val store: PermissionsStore = new PermissionsStore(config)
 
   def get(perm: Permission)(implicit user: PermissionsUser): Future[PermissionAuthorisation] =
     store.get(perm).recover {
