@@ -55,22 +55,13 @@ Ensure tests pass before a release.
 
     sbt clean test
 
-Release versioning uses the latest git tag, with semantic versioning.
+Then release using:
 
-    git tag -t v0.1.1
-    git push --tags
-
-Note: use `sbt version` to double check the version before publishing.
-
-Then release to sonatype using [`sbt-sonatype`](https://github.com/xerial/sbt-sonatype). Note you will need:
+    sbt release
+  
+Note you will need:
 
   - access to the `com.gu` group in Sonatype
   - a gpg key with public key sent to http://pgp.mit.edu/ see [sbt-pgp](http://www.scala-sbt.org/sbt-pgp)
   - your Sonatype credentials accessible to SBT using [sbt-sonatype](https://github.com/xerial/sbt-sonatype#homesbtsbt-versionsonatypesbt)
 
-```
-sbt
-> clean
-> + publishSigned
-> sonatypeRelease
-```

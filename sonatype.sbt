@@ -1,3 +1,5 @@
+sonatypeProfileName := "com.gu"
+
 pomExtra in Global := {
   <url>https://github.com/guardian/editorial-permissions-client</url>
   <scm>
