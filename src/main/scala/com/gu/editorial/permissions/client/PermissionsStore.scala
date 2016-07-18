@@ -32,15 +32,15 @@ object PermissionsStoreModel {
 }
 
 
-class PermissionsStore(provider: Option[PermissionsStoreProvider] = None)(implicit config: PermissionsConfig, executionContext: ExecutionContext) {
+class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsStoreProvider] = None)(implicit executionContext: ExecutionContext) {
 
-  val storeProvider: PermissionsStoreProvider = provider.getOrElse(new PermissionsStoreFromS3)
+  val storeProvider: PermissionsStoreProvider = provider.getOrElse(new PermissionsStoreFromS3(config))
 
-  def get(perm: Permission)(implicit user: PermissionsUser, config: PermissionsConfig): Future[PermissionAuthorisation] =
+  def get(perm: Permission)(implicit user: PermissionsUser): Future[PermissionAuthorisation] =
     list.map(_.getOrElse(perm, perm.defaultValue))
 
 
-  def list(implicit user: PermissionsUser, config: PermissionsConfig): Future[PermissionsMap] = {
+  def list(implicit user: PermissionsUser): Future[PermissionsMap] = {
     if (config.enablePermissionsStore)
       storeProvider.store.future()
         .flatMap {
@@ -57,20 +57,28 @@ class PermissionsStore(provider: Option[PermissionsStoreProvider] = None)(implic
 
 trait PermissionsStoreProvider {
   val store: Agent[PermissionsStoreModel]
+  def storeIsEmpty: Boolean
 }
 
 
-private[client] final class PermissionsStoreFromS3(refreshFrequency: Option[FiniteDuration] = Some(Duration(1, MINUTES)),
-                                                s3Client: Option[AmazonS3] = None)
-                                               (implicit config: PermissionsConfig,
-                                                actorSystem: ActorSystem = ActorSystem(),
-                                                executionContext: ExecutionContext) extends PermissionsStoreProvider {
+private[client] final class PermissionsStoreFromS3(config: PermissionsConfig,
+                                                   refreshFrequency: Option[FiniteDuration] = Some(Duration(1, MINUTES)),
+                                                   s3Client: Option[AmazonS3] = None)
+                                                  (implicit actorSystem: ActorSystem = ActorSystem(),
+                                                   executionContext: ExecutionContext) extends PermissionsStoreProvider {
 
   implicit lazy val logger = LoggerFactory.getLogger(getClass)
 
   implicit private val timeout = Timeout(Duration(5, SECONDS))
 
   val store: Agent[PermissionsStoreModel] = Agent(PermissionsStoreModel.empty)
+
+  def storeIsEmpty = {
+    store.get() match {
+      case PermissionsStoreModel.empty => true
+      case s: PermissionsStoreModel => false
+    }
+  }
 
   private val s3 = s3Client.getOrElse {
     new AmazonS3(creds = config.awsCredentials, region = config.s3Region)
