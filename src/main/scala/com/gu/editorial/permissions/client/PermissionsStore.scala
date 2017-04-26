@@ -93,7 +93,7 @@ private[client] final class PermissionsStoreFromS3(config: PermissionsConfig,
     val s3BucketAndPrefix = s"${config.s3Bucket}/${config.s3BucketPrefix}"
     logger.debug(s"Load permissions from S3 bucket: s3://$s3BucketAndPrefix/${config.s3PermissionsFile}")
     val (out, modDate) = s3.getContentsAndLastModified(config.s3PermissionsFile, s3BucketAndPrefix)
-    logger.info(s"Permissions successfully retrieved from S3, last modified: $modDate")
+    logger.debug(s"Permissions successfully retrieved from S3, last modified: $modDate")
     out
   }
 
