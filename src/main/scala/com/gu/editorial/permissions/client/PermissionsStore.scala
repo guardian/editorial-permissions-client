@@ -42,10 +42,10 @@ class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsSt
 
   def list(implicit user: PermissionsUser): Future[PermissionsMap] = {
     if (config.enablePermissionsStore)
-      storeProvider.store.modify Try {
-        case PermissionsStoreModel.empty => throw PermissionsStoreEmptyException()
-        case s: PermissionsStoreModel => s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty)
-      }
+      storeProvider.store.modify {
+        case PermissionsStoreModel.empty => Failure(PermissionsStoreEmptyException())
+        case s: PermissionsStoreModel => Success(s)
+      }.map(s => s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty))
 
     else Future.failed(PermissionsStoreDisabledException())
   }
