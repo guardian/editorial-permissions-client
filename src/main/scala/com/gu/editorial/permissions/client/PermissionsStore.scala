@@ -9,7 +9,7 @@ import akka.util.Timeout
 import com.amazonaws.ClientConfiguration
 import com.amazonaws.auth.{AWSCredentialsProvider, DefaultAWSCredentialsProviderChain}
 import com.amazonaws.regions.{Region, Regions}
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{AmazonS3ClientBuilder}
 import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
 import com.gu.Box
 import net.liftweb.json.DefaultFormats
@@ -183,17 +183,18 @@ private[client] class AmazonS3(creds: AWSCredentialsProvider = new DefaultAWSCre
 
   lazy val awsClientConfiguration = awsClientConfigurationWithProxy.getOrElse(new ClientConfiguration())
 
-  val s3Client = new AmazonS3Client(creds, awsClientConfiguration)
+  // Regions.getCurrentRegion calls the EC2 metadata service (which hangs in GC2) hence we use the awsOption method
+  private lazy val defaultRegion = awsOption(Regions.getCurrentRegion).getOrElse(Region.getRegion(Regions.EU_WEST_1))
+  private val awsRegion = region.map { r => Region.getRegion(Regions.fromName(r)) }.getOrElse(defaultRegion)
+
+  val s3Client = AmazonS3ClientBuilder.standard()
+    .withCredentials(creds)
+    .withClientConfiguration(awsClientConfiguration)
+    .withRegion(awsRegion.getName)
+    .build
 
   lazy val isAWS = Try(InetAddress.getByName("instance-data")).isSuccess
   def awsOption[T](f: => T): Option[T] = if (isAWS) Option(f) else None
-
-  // Regions.getCurrentRegion calls the EC2 metadata service (which hangs in GC2) hence we use the awsOption method
-  private lazy val defaultRegion = awsOption(Regions.getCurrentRegion).getOrElse(Region.getRegion(Regions.EU_WEST_1))
-
-  private val awsRegion = region.map { r => Region.getRegion(Regions.fromName(r)) }.getOrElse(defaultRegion)
-  s3Client.setRegion(awsRegion)
-
 
   private def getObject(key: String, bucketName: String): S3Object =
     s3Client.getObject(new GetObjectRequest(bucketName, key))
