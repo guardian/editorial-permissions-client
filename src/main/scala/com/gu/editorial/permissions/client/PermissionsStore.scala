@@ -4,14 +4,14 @@ import java.net.InetAddress
 import java.util.Date
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import akka.agent.Agent
 import akka.pattern.ask
 import akka.util.Timeout
 import com.amazonaws.ClientConfiguration
 import com.amazonaws.auth.{AWSCredentialsProvider, DefaultAWSCredentialsProviderChain}
 import com.amazonaws.regions.{Region, Regions}
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{AmazonS3ClientBuilder}
 import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
+import com.gu.Box
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json.JsonParser._
 import org.slf4j.LoggerFactory
@@ -42,12 +42,9 @@ class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsSt
 
   def list(implicit user: PermissionsUser): Future[PermissionsMap] = {
     if (config.enablePermissionsStore)
-      storeProvider.store.future()
-        .flatMap {
+      storeProvider.store.get match {
         case PermissionsStoreModel.empty => Future.failed(PermissionsStoreEmptyException())
-        case s: PermissionsStoreModel => Future.successful[PermissionsMap] {
-          s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty)
-        }
+        case s: PermissionsStoreModel => Future.successful(s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty))
       }
 
     else Future.failed(PermissionsStoreDisabledException())
@@ -56,7 +53,7 @@ class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsSt
 
 
 trait PermissionsStoreProvider {
-  val store: Agent[PermissionsStoreModel]
+  val store: Box[PermissionsStoreModel]
   def storeIsEmpty: Boolean
 }
 
@@ -71,7 +68,7 @@ private[client] final class PermissionsStoreFromS3(config: PermissionsConfig,
 
   implicit private val timeout = Timeout(Duration(5, SECONDS))
 
-  val store: Agent[PermissionsStoreModel] = Agent(PermissionsStoreModel.empty)
+  val store: Box[PermissionsStoreModel] = Box(PermissionsStoreModel.empty)
 
   def storeIsEmpty = {
     store.get() match {
@@ -127,7 +124,7 @@ private[client] object S3Parser {
   }
 }
 
-private[client] final class PermissionsStoreRefreshActor(store: Agent[PermissionsStoreModel],
+private[client] final class PermissionsStoreRefreshActor(store: Box[PermissionsStoreModel],
                                                       get: () => PermissionsStoreModel,
                                                       refreshFrequency: Option[FiniteDuration])
                                                      (implicit executionContext: ExecutionContext) extends Actor with ActorLogging {
@@ -186,17 +183,18 @@ private[client] class AmazonS3(creds: AWSCredentialsProvider = new DefaultAWSCre
 
   lazy val awsClientConfiguration = awsClientConfigurationWithProxy.getOrElse(new ClientConfiguration())
 
-  val s3Client = new AmazonS3Client(creds, awsClientConfiguration)
+  // Regions.getCurrentRegion calls the EC2 metadata service (which hangs in GC2) hence we use the awsOption method
+  private lazy val defaultRegion = awsOption(Regions.getCurrentRegion).getOrElse(Region.getRegion(Regions.EU_WEST_1))
+  private val awsRegion = region.map { r => Region.getRegion(Regions.fromName(r)) }.getOrElse(defaultRegion)
+
+  val s3Client = AmazonS3ClientBuilder.standard()
+    .withCredentials(creds)
+    .withClientConfiguration(awsClientConfiguration)
+    .withRegion(awsRegion.getName)
+    .build
 
   lazy val isAWS = Try(InetAddress.getByName("instance-data")).isSuccess
   def awsOption[T](f: => T): Option[T] = if (isAWS) Option(f) else None
-
-  // Regions.getCurrentRegion calls the EC2 metadata service (which hangs in GC2) hence we use the awsOption method
-  private lazy val defaultRegion = awsOption(Regions.getCurrentRegion).getOrElse(Region.getRegion(Regions.EU_WEST_1))
-
-  private val awsRegion = region.map { r => Region.getRegion(Regions.fromName(r)) }.getOrElse(defaultRegion)
-  s3Client.setRegion(awsRegion)
-
 
   private def getObject(key: String, bucketName: String): S3Object =
     s3Client.getObject(new GetObjectRequest(bucketName, key))
