@@ -18,8 +18,8 @@ val awsSdkVersion = "1.11.280"
 libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-s3" % awsSdkVersion,
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  "com.typesafe.akka" %% "akka-agent" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.gu" %% "box" % "0.2.0",
   "net.liftweb" %% "lift-json" % "3.2.0",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test"

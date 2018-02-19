@@ -4,7 +4,6 @@ import java.net.InetAddress
 import java.util.Date
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import akka.agent.Agent
 import akka.pattern.ask
 import akka.util.Timeout
 import com.amazonaws.ClientConfiguration
@@ -12,6 +11,7 @@ import com.amazonaws.auth.{AWSCredentialsProvider, DefaultAWSCredentialsProvider
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{GetObjectRequest, S3Object}
+import com.gu.Box
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json.JsonParser._
 import org.slf4j.LoggerFactory
@@ -42,12 +42,9 @@ class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsSt
 
   def list(implicit user: PermissionsUser): Future[PermissionsMap] = {
     if (config.enablePermissionsStore)
-      storeProvider.store.future()
-        .flatMap {
-        case PermissionsStoreModel.empty => Future.failed(PermissionsStoreEmptyException())
-        case s: PermissionsStoreModel => Future.successful[PermissionsMap] {
-          s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty)
-        }
+      storeProvider.store.modify Try {
+        case PermissionsStoreModel.empty => throw PermissionsStoreEmptyException()
+        case s: PermissionsStoreModel => s.defaultsMap ++ s.userOverrides.getOrElse(user.userId.toLowerCase, Map.empty)
       }
 
     else Future.failed(PermissionsStoreDisabledException())
@@ -56,7 +53,7 @@ class PermissionsStore(config: PermissionsConfig, provider: Option[PermissionsSt
 
 
 trait PermissionsStoreProvider {
-  val store: Agent[PermissionsStoreModel]
+  val store: Box[PermissionsStoreModel]
   def storeIsEmpty: Boolean
 }
 
@@ -71,7 +68,7 @@ private[client] final class PermissionsStoreFromS3(config: PermissionsConfig,
 
   implicit private val timeout = Timeout(Duration(5, SECONDS))
 
-  val store: Agent[PermissionsStoreModel] = Agent(PermissionsStoreModel.empty)
+  val store: Box[PermissionsStoreModel] = Box(PermissionsStoreModel.empty)
 
   def storeIsEmpty = {
     store.get() match {
@@ -127,7 +124,7 @@ private[client] object S3Parser {
   }
 }
 
-private[client] final class PermissionsStoreRefreshActor(store: Agent[PermissionsStoreModel],
+private[client] final class PermissionsStoreRefreshActor(store: Box[PermissionsStoreModel],
                                                       get: () => PermissionsStoreModel,
                                                       refreshFrequency: Option[FiniteDuration])
                                                      (implicit executionContext: ExecutionContext) extends Actor with ActorLogging {
