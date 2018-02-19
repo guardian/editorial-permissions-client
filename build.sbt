@@ -6,9 +6,9 @@ organization := "com.gu"
 
 licenses += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0"))
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.4"
 
-crossScalaVersions := Seq("2.11.4")
+crossScalaVersions := Seq("2.11.8")
 
 scalacOptions ++= Seq("-feature", "-deprecation", "-language:higherKinds", "-Xfatal-warnings")
 
