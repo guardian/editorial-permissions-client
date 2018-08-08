@@ -1,5 +1,8 @@
 # editorial-permissions-client
 
+> NB: the client library has been moved to the main Permission code-base. Please make any further updates there.
+> https://github.com/guardian/permissions
+
 Scala Client library for the Guardian's [Editorial Permissions service](https://github.com/guardian/permissions).
 
 ## Usage
