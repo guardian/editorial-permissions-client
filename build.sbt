@@ -6,13 +6,13 @@ organization := "com.gu"
 
 licenses += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0"))
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.8"
 
 crossScalaVersions := Seq("2.11.12")
 
 scalacOptions ++= Seq("-feature", "-deprecation", "-language:higherKinds", "-Xfatal-warnings")
 
-val akkaVersion = "2.5.9"
+val akkaVersion = "2.5.19"
 val awsSdkVersion = "1.11.280"
 
 libraryDependencies ++= Seq(
